@@ -7,6 +7,8 @@ import Axios from 'axios'
 import { Jwt } from '../../auth/Jwt'
 import { JwtPayload } from '../../auth/JwtPayload'
 
+const jwkToPem = require('jwk-to-pem')
+
 const logger = createLogger('auth')
 
 // TODO: Provide a URL that can be used to download a certificate that can be used
@@ -57,31 +59,33 @@ export const handler = async (
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
   const token = getToken(authHeader)
   let cert: string
+  const jwt: Jwt = decode(token, { complete: true }) as Jwt
+  let jwtverified: JwtPayload
   try {
-    cert = await getCertificate()
+    cert = await getCertificate(jwt)
   } catch (error) {
     throw new Error('Certificate auth error: ' + error.message)
   }
 try {
- verify(token, cert, { algorithms: ['RS256'] })
+  jwtverified = verify(token, jwkToPem(cert), { algorithms: ['RS256'] }) as JwtPayload
 } catch (error) {
   throw new Error('Token validation error: ' + error.message) 
 }
-const jwt: Jwt = decode(token, { complete: true }) as Jwt
-return jwt.payload as JwtPayload
+return jwtverified as JwtPayload
   // TODO: Implement token verification
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
 }
 
-async function getCertificate(): Promise<string> {
+async function getCertificate(jwt: Jwt): Promise<string> {
   let cert: string
   await Axios({method: 'get', url: jwksUrl})
   .then((response) => {
     if (response.status < 200 || response.status >= 300) {throw new Error('Certificate download error')}
-    cert = response.data.keys
+    cert = response.data.keys.find(key => key['kid'] === jwt['header']['kid'])
   })
   .catch((error) => {throw new Error('Certificate download error: ' + error.message)})
+  if (!cert) {throw new Error('Certificate not present')}
   return cert
 }
 
