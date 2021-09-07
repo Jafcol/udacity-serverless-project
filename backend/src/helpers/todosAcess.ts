@@ -58,7 +58,7 @@ export class TodoAccess {
       ExpressionAttributeValues:{":nameparam":todo.name,
       ":dueDate":todo.dueDate,
       ":done":todo.done},
-      ReturnValues:'UPDATE_NEW'
+      ReturnValues:'UPDATED_NEW'
     }).promise().catch((error) => {
       logger.error('Updating todo error', {userId: userId, todoId: todoId, time: new Date().toISOString()})
       throw new Error('updating todo error: ' + error.message)})
