@@ -86,7 +86,7 @@ export class TodoAccess {
     Key: {'userId': userId, 'todoId': todoId},
     UpdateExpression: 'set attachmentUrl = :bucketurl',
     ExpressionAttributeValues:{":bucketurl":`https://${this.bucketName}.s3.amazonaws.com/${attachmentId}`},
-    ReturnValues:'UPDATE_NEW'
+    ReturnValues:'UPDATED_NEW'
   }).promise().catch((error) => {
     logger.info('Adding attachment error', {userId: userId, todoId: todoId, time: new Date().toISOString()})
     throw new Error('adding attachment url error: ' + error.message)})
