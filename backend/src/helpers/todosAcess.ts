@@ -58,7 +58,7 @@ export class TodoAccess {
       ExpressionAttributeValues:{":nameparam":todo.name,
       ":dueDate":todo.dueDate,
       ":done":todo.done},
-      ReturnValues:'UPDATED_NEW'
+      ReturnValues:'UPDATE_NEW'
     }).promise().catch((error) => {
       logger.error('Updating todo error', {userId: userId, todoId: todoId, time: new Date().toISOString()})
       throw new Error('updating todo error: ' + error.message)})
@@ -86,7 +86,7 @@ export class TodoAccess {
     Key: {'userId': userId, 'todoId': todoId},
     UpdateExpression: 'set attachmentUrl = :bucketurl',
     ExpressionAttributeValues:{":bucketurl":`https://${this.bucketName}.s3.amazonaws.com/${attachmentId}`},
-    ReturnValues:'UPDATED_NEW'
+    ReturnValues:'UPDATE_NEW'
   }).promise().catch((error) => {
     logger.info('Adding attachment error', {userId: userId, todoId: todoId, time: new Date().toISOString()})
     throw new Error('adding attachment url error: ' + error.message)})

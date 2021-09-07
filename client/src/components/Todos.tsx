@@ -96,7 +96,7 @@ export class Todos extends React.PureComponent<TodosProps, TodosState> {
         todos,
         loadingTodos: false
       })
-    } catch (e: any) {
+    } catch (e) {
       alert(`Failed to fetch todos: ${e.message}`)
     }
   }
