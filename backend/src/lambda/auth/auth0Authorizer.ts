@@ -1,4 +1,4 @@
-import { CustomAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
+import { APIGatewayTokenAuthorizerEvent, CustomAuthorizerResult } from 'aws-lambda'
 import 'source-map-support/register'
 
 import { verify, decode } from 'jsonwebtoken'
@@ -12,10 +12,10 @@ const logger = createLogger('auth')
 // TODO: Provide a URL that can be used to download a certificate that can be used
 // to verify JWT token signature.
 // To get this URL you need to go to an Auth0 page -> Show Advanced Settings -> Endpoints -> JSON Web Key Set
-const jwksUrl = '...'
+const jwksUrl = 'https://dev-9ry06blv.us.auth0.com/.well-known/jwks.json'
 
 export const handler = async (
-  event: CustomAuthorizerEvent
+  event: APIGatewayTokenAuthorizerEvent
 ): Promise<CustomAuthorizerResult> => {
   logger.info('Authorizing a user', event.authorizationToken)
   try {
@@ -56,12 +56,33 @@ export const handler = async (
 
 async function verifyToken(authHeader: string): Promise<JwtPayload> {
   const token = getToken(authHeader)
-  const jwt: Jwt = decode(token, { complete: true }) as Jwt
-
+  let cert: string
+  try {
+    cert = await getCertificate()
+  } catch (error) {
+    throw new Error('Certificate auth error: ' + error.message)
+  }
+try {
+ verify(token, cert, { algorithms: ['RS256'] })
+} catch (error) {
+  throw new Error('Token validation error: ' + error.message) 
+}
+const jwt: Jwt = decode(token, { complete: true }) as Jwt
+return jwt.payload as JwtPayload
   // TODO: Implement token verification
   // You should implement it similarly to how it was implemented for the exercise for the lesson 5
   // You can read more about how to do this here: https://auth0.com/blog/navigating-rs256-and-jwks/
-  return undefined
+}
+
+async function getCertificate(): Promise<string> {
+  let cert: string
+  await Axios({method: 'get', url: jwksUrl})
+  .then((response) => {
+    if (response.status < 200 || response.status >= 300) {throw new Error('Certificate download error')}
+    cert = response.data.keys
+  })
+  .catch((error) => {throw new Error('Certificate download error: ' + error.message)})
+  return cert
 }
 
 function getToken(authHeader: string): string {
