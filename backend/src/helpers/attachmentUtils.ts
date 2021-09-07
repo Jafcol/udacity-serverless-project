@@ -20,7 +20,7 @@ export async function AttachmentUtils(userId: string, todoId: string): Promise<s
        responseUrl = await s3.getSignedUrl('putObject', {
         Bucket: bucketName,
         Key: attachmentId,
-        Expires: parseInt(urlExpiration)
+        Expires: urlExpiration
       })
     } catch (error) {
         throw new Error('upload url error: ' + error.message)
